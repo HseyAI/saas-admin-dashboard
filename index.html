@@ -122,27 +122,43 @@
        msg.className = 'msg';
        hide('memResult', true);
 
+    async function loadMember(mobile) {
+       if(!mobile) return;
+       const msg = get('memMsg');
+       msg.textContent = 'Searching database...';
+       msg.style.display = 'block';
+       msg.className = 'msg';
+       hide('memResult', true);
+  
        try {
-          const response = await fetch(N8N_WEBHOOK_URL, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ "mobile": mobile })
-          });
-
-          const data = await response.json();
-
-          if (data.error || !data.userInfo) {
-             msg.textContent = data.error || "Member not found.";
-             msg.className = 'msg error';
-          } else {
-             msg.style.display = 'none';
-             renderMember(data);
-          }
-       } catch (err) {
-          console.error(err);
-          get('memMsg').textContent = 'Error: Connection failed. Check CORS in n8n.';
-       }
-    }
+            const response = await fetch(N8N_WEBHOOK_URL, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               // Fixed: using the correct 'mobile' variable here
+               body: JSON.stringify({ "mobile": mobile }) 
+            });
+      
+            // Check if the response is actually JSON
+            if (!response.ok) {
+               throw new Error('Server responded with an error');
+            }
+      
+            const data = await response.json();
+      
+            if (data.error || !data.userInfo) {
+               msg.textContent = data.error || "Member not found.";
+               msg.className = 'msg error';
+            } else {
+               msg.style.display = 'none';
+               renderMember(data);
+            }
+         } catch (err) {
+            console.error(err);
+            msg.textContent = 'Error: Connection failed. Ensure CORS is enabled in n8n and the workflow is Active.';
+            msg.className = 'msg error';
+         }
+      }
+    
 
     function renderMember(d) {
        hide('memResult', false);
@@ -185,5 +201,6 @@
   </script>
 </body>
 </html>
+
 
 
