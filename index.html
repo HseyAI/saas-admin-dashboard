@@ -126,7 +126,7 @@
           const response = await fetch(N8N_WEBHOOK_URL, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ "mobile": mobileNumber })
+             body: JSON.stringify({ "mobile": mobile })
           });
 
           const data = await response.json();
@@ -185,4 +185,5 @@
   </script>
 </body>
 </html>
+
 
