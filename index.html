@@ -123,41 +123,44 @@
        hide('memResult', true);
 
     async function loadMember(mobile) {
-       if(!mobile) return;
+       if (!mobile) return;
+       
        const msg = get('memMsg');
        msg.textContent = 'Searching database...';
        msg.style.display = 'block';
        msg.className = 'msg';
        hide('memResult', true);
-  
+    
        try {
-            const response = await fetch(N8N_WEBHOOK_URL, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               // Fixed: using the correct 'mobile' variable here
-               body: JSON.stringify({ "mobile": mobile }) 
-            });
-      
-            // Check if the response is actually JSON
-            if (!response.ok) {
-               throw new Error('Server responded with an error');
-            }
-      
-            const data = await response.json();
-      
-            if (data.error || !data.userInfo) {
-               msg.textContent = data.error || "Member not found.";
-               msg.className = 'msg error';
-            } else {
-               msg.style.display = 'none';
-               renderMember(data);
-            }
-         } catch (err) {
-            console.error(err);
-            msg.textContent = 'Error: Connection failed. Ensure CORS is enabled in n8n and the workflow is Active.';
-            msg.className = 'msg error';
-         }
-      }
+          // 1. Sending POST request to n8n Production Webhook
+          const response = await fetch(N8N_WEBHOOK_URL, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             // 2. Body sends "mobile" key to match your n8n JavaScript node
+             body: JSON.stringify({ "mobile": mobile }) 
+          });
+    
+          // 3. Error handling for network/server status
+          if (!response.ok) {
+             throw new Error('Server responded with an error');
+          }
+    
+          const data = await response.json();
+    
+          // 4. Data validation based on n8n "Align all records" node output
+          if (data.error || !data.userInfo) {
+             msg.textContent = data.error || "Member not found.";
+             msg.className = 'msg error';
+          } else {
+             msg.style.display = 'none';
+             renderMember(data);
+          }
+       } catch (err) {
+          console.error('Fetch error:', err);
+          msg.textContent = 'Error: Connection failed. Ensure CORS is enabled in n8n and the workflow is Active.';
+          msg.className = 'msg error';
+       }
+    }
     
 
     function renderMember(d) {
@@ -201,6 +204,7 @@
   </script>
 </body>
 </html>
+
 
 
 
