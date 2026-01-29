@@ -104,8 +104,8 @@
   </div>
 
   <script>
-    const N8N_WEBHOOK_URL = 'https://n8n-production-8414.up.railway.app/webhook/8ff1dc65-f09f-410a-a3cf-caae7ea8c0d6';
-
+    const N8N_WEBHOOK_URL = 'https://n8n-production-8414.up.railway.app/webhook/Membership-Info'; 
+    
     const get = (id) => document.getElementById(id);
     const hide = (id, x) => { const el=get(id); if(el) x?el.classList.add('hidden'):el.classList.remove('hidden'); };
     const set = (id, v) => { const el=get(id); if(el) el.textContent=v; };
@@ -126,7 +126,7 @@
           const response = await fetch(N8N_WEBHOOK_URL, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ "Mobile Number": mobile })
+             body: JSON.stringify({ "mobile": mobileNumber })
           });
 
           const data = await response.json();
@@ -139,8 +139,8 @@
              renderMember(data);
           }
        } catch (err) {
-          msg.textContent = 'Error: Connection to n8n failed.';
-          msg.className = 'msg error';
+          console.error(err);
+          get('memMsg').textContent = 'Error: Connection failed. Check CORS in n8n.';
        }
     }
 
@@ -185,3 +185,4 @@
   </script>
 </body>
 </html>
+
