@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ... (Existing CSS remains exactly as you had it in your Index.html) ... */
+    /* I am omitting the long CSS block to keep this readable, but keep it in your file */
+  </style>
+</head>
+<body>
+  <script>
+    const N8N_WEBHOOK_URL = 'https://n8n-production-8414.up.railway.app/webhook/8ff1dc65-f09f-410a-a3cf-caae7ea8c0d6';
+
+    const S = {
+       user: 'admin@cafe.com', // Placeholder for n8n
+       name: 'Admin',
+       curMem: null,
+       activeFilters: []
+    };
+
+    const get = (id) => document.getElementById(id);
+    const hide = (id, x) => { const el=get(id); if(el) x?el.classList.add('hidden'):el.classList.remove('hidden'); };
+    const set = (id, v) => { const el=get(id); if(el) el.textContent=v; };
+
+    // Function to call your n8n Backend
+    async function loadMember(mobileNumber) {
+       hide('memResult', true);
+       const msg = get('memMsg');
+       msg.textContent = 'Loading...';
+       msg.style.display = 'block';
+       msg.className = 'msg';
+
+       try {
+          const response = await fetch(N8N_WEBHOOK_URL, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ "Mobile Number": mobileNumber })
+          });
+
+          const data = await response.json();
+
+          if (data.error) {
+             msg.textContent = data.error;
+             msg.className = 'msg error';
+          } else {
+             msg.style.display = 'none';
+             S.curMem = data;
+             renderMember(data);
+          }
+       } catch (err) {
+          msg.textContent = 'Connection Error: Check n8n CORS settings.';
+          msg.className = 'msg error';
+       }
+    }
+
+    function renderMember(d) {
+       hide('memResult', false);
+       const summary = d.membershipSummary;
+       const info = d.userInfo;
+
+       set('mName', info.name); 
+       set('mMobile', info.mobile);
+       set('mTot', summary.totalHoursGranted); 
+       set('mUse', summary.totalHoursUsed); 
+       set('mBal', summary.balanceHours);
+       set('mPlan', summary.currentPlan); 
+       set('mDate', summary.expiryDate);
+       
+       const tag = get('mStatusTag');
+       const expMsg = get('mExpiryMsg');
+       
+       if(summary.isExpired) { 
+         tag.textContent = 'Expired'; tag.className = 'tag expired';
+         hide('mExpiryMsg', false);
+         expMsg.textContent = `Error: Membership Expired on ${summary.expiryDate}.`;
+       } else { 
+         tag.textContent = 'Active'; tag.className = 'tag gold'; 
+         hide('mExpiryMsg', true);
+       }
+
+       // Render History Tables
+       get('tblPurch').innerHTML = d.history.purchases.map(r => 
+          `<tr><td>${r.purchase_date}</td><td>${r.plan_name}</td><td>${r.hours_granted}</td></tr>`).join('');
+       
+       get('tblUse').innerHTML = d.history.activityLogs.map(r => 
+          `<tr><td>${r.date_consumed}</td><td>${r.hours_consumed}</td><td>${r.branch}</td></tr>`).join('');
+    }
+
+    // Attach search event
+    get('memInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loadMember(e.target.value);
+    });
+
+    // ... (Keep your other UI functions like nav(), changeMonth(), etc.) ...
+  </script>
+</body>
+</html>
