@@ -4,96 +4,184 @@
   <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
-    /* ... (Existing CSS remains exactly as you had it in your Index.html) ... */
-    /* I am omitting the long CSS block to keep this readable, but keep it in your file */
+    :root {
+      --brand-purple: #9b59b6; 
+      --brand-purple-dark: #8e44ad;
+      --brand-green: #2ecc71;
+      --brand-green-dark: #27ae60;
+      --bg-app: #f4f6f8;
+      --bg-card: #ffffff;
+      --text-dark: #2c3e50;
+      --text-light: #7f8c8d;
+      --border-color: #e6e9ec;
+      --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg-app);
+      color: var(--text-dark);
+      padding-bottom: 90px;
+    }
+    .app-header {
+      background: #ffffff; padding: 12px 20px;
+      position: sticky; top: 0; z-index: 50;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand-name { font-weight: 800; font-size: 20px; color: var(--brand-purple); text-transform: uppercase; }
+    .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+    .hidden { display: none !important; }
+    .card { background: var(--bg-card); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid #fff; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+    .card-title { font-size: 16px; font-weight: 800; color: var(--text-dark); }
+    .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; background: #eee; }
+    .tag.gold { background: #fff8e1; color: #f1c40f; }
+    .tag.expired { background: #ffebee; color: #c62828; }
+    .input-field { width: 100%; padding: 14px 16px; background: #f8f9fa; border: 2px solid #edf2f7; border-radius: 12px; font-size: 15px; outline: none; margin-bottom: 15px; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; }
+    .btn-success { background: linear-gradient(135deg, var(--brand-green), var(--brand-green-dark)); color: #fff; }
+    .stats-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: #f8f9fa; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #edf2f7; }
+    .stat-val { font-size: 20px; font-weight: 800; display: block; }
+    .stat-label { font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; }
+    .table-box { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px; background: #f8f9fa; font-size: 11px; text-transform: uppercase; }
+    td { padding: 12px; border-top: 1px solid #f0f0f0; }
+    .msg { padding: 12px; border-radius: 10px; font-weight: 600; font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+    .msg.error { background: #fdeded; color: #ef5350; }
   </style>
 </head>
 <body>
+
+  <header class="app-header">
+    <div class="brand-name">SAAS ADMIN</div>
+    <div id="headerUser" class="tag">Admin</div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Member Lookup</span></div>
+      <input type="text" id="memInput" class="input-field" placeholder="Enter Mobile Number...">
+      <button class="btn btn-success" onclick="loadMember(document.getElementById('memInput').value)">Search</button>
+      <div id="memMsg" class="msg"></div>
+    </div>
+
+    <div id="memResult" class="hidden">
+      <div class="card">
+        <div class="card-header">
+           <div><div style="font-size:20px; font-weight:800; color:var(--brand-purple)" id="mName"></div><div id="mMobile" style="color:var(--text-light); font-size:13px;"></div></div>
+           <div id="mStatusTag" class="tag gold">Active</div>
+        </div>
+        
+        <div class="stats-container">
+          <div class="stat-card"><span class="stat-val" id="mTot">0</span><span class="stat-label">Total</span></div>
+          <div class="stat-card"><span class="stat-val" id="mUse">0</span><span class="stat-label">Used</span></div>
+          <div class="stat-card"><span class="stat-val" id="mBal">0</span><span class="stat-label">Balance</span></div>
+        </div>
+
+        <div id="mExpiryMsg" style="background:#fdeded; color:#ef5350; padding:10px; border-radius:8px; display:none; margin-bottom:15px;"></div>
+
+        <div style="background:#f8f9fa; padding:10px; border-radius:10px; text-align:center; font-size:13px; margin-bottom:15px;">
+          Current Plan: <strong id="mPlan"></strong> (<span id="mDate"></span>)
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">History</span></div>
+        <div class="table-box">
+          <table>
+            <thead><tr><th>Date</th><th>Plan/Activity</th><th>Hrs</th></tr></thead>
+            <tbody id="tblPurch"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const N8N_WEBHOOK_URL = 'https://n8n-production-8414.up.railway.app/webhook/8ff1dc65-f09f-410a-a3cf-caae7ea8c0d6';
-
-    const S = {
-       user: 'admin@cafe.com', // Placeholder for n8n
-       name: 'Admin',
-       curMem: null,
-       activeFilters: []
-    };
 
     const get = (id) => document.getElementById(id);
     const hide = (id, x) => { const el=get(id); if(el) x?el.classList.add('hidden'):el.classList.remove('hidden'); };
     const set = (id, v) => { const el=get(id); if(el) el.textContent=v; };
 
-    // Function to call your n8n Backend
-    async function loadMember(mobileNumber) {
-       hide('memResult', true);
+    window.onload = () => {
+       console.log("Dashboard loaded and ready.");
+    };
+
+    async function loadMember(mobile) {
+       if(!mobile) return;
        const msg = get('memMsg');
-       msg.textContent = 'Loading...';
+       msg.textContent = 'Searching database...';
        msg.style.display = 'block';
        msg.className = 'msg';
+       hide('memResult', true);
 
        try {
           const response = await fetch(N8N_WEBHOOK_URL, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ "Mobile Number": mobileNumber })
+             body: JSON.stringify({ "Mobile Number": mobile })
           });
 
           const data = await response.json();
 
-          if (data.error) {
-             msg.textContent = data.error;
+          if (data.error || !data.userInfo) {
+             msg.textContent = data.error || "Member not found.";
              msg.className = 'msg error';
           } else {
              msg.style.display = 'none';
-             S.curMem = data;
              renderMember(data);
           }
        } catch (err) {
-          msg.textContent = 'Connection Error: Check n8n CORS settings.';
+          msg.textContent = 'Error: Connection to n8n failed.';
           msg.className = 'msg error';
        }
     }
 
     function renderMember(d) {
        hide('memResult', false);
-       const summary = d.membershipSummary;
+       const sum = d.membershipSummary;
        const info = d.userInfo;
 
        set('mName', info.name); 
        set('mMobile', info.mobile);
-       set('mTot', summary.totalHoursGranted); 
-       set('mUse', summary.totalHoursUsed); 
-       set('mBal', summary.balanceHours);
-       set('mPlan', summary.currentPlan); 
-       set('mDate', summary.expiryDate);
+       set('mTot', sum.totalHoursGranted); 
+       set('mUse', sum.totalHoursUsed); 
+       set('mBal', sum.balanceHours);
+       set('mPlan', sum.currentPlan); 
+       set('mDate', sum.expiryDate);
        
        const tag = get('mStatusTag');
        const expMsg = get('mExpiryMsg');
        
-       if(summary.isExpired) { 
+       if(sum.isExpired) { 
          tag.textContent = 'Expired'; tag.className = 'tag expired';
-         hide('mExpiryMsg', false);
-         expMsg.textContent = `Error: Membership Expired on ${summary.expiryDate}.`;
+         expMsg.style.display = 'block';
+         expMsg.textContent = `Membership Expired on ${sum.expiryDate}.`;
        } else { 
          tag.textContent = 'Active'; tag.className = 'tag gold'; 
-         hide('mExpiryMsg', true);
+         expMsg.style.display = 'none';
        }
 
-       // Render History Tables
-       get('tblPurch').innerHTML = d.history.purchases.map(r => 
-          `<tr><td>${r.purchase_date}</td><td>${r.plan_name}</td><td>${r.hours_granted}</td></tr>`).join('');
-       
-       get('tblUse').innerHTML = d.history.activityLogs.map(r => 
-          `<tr><td>${r.date_consumed}</td><td>${r.hours_consumed}</td><td>${r.branch}</td></tr>`).join('');
+       let historyHtml = '';
+       d.history.purchases.forEach(p => {
+         historyHtml += `<tr><td>${p.purchase_date}</td><td>${p.plan_name}</td><td>${p.hours_granted}</td></tr>`;
+       });
+       d.history.activityLogs.forEach(l => {
+         historyHtml += `<tr style="color:var(--text-light)"><td>${l.date_consumed}</td><td>Usage @ ${l.branch}</td><td>-${l.hours_consumed}</td></tr>`;
+       });
+       get('tblPurch').innerHTML = historyHtml;
     }
 
-    // Attach search event
     get('memInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') loadMember(e.target.value);
     });
-
-    // ... (Keep your other UI functions like nav(), changeMonth(), etc.) ...
   </script>
 </body>
 </html>
